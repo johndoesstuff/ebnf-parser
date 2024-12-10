@@ -41,54 +41,58 @@ class Tokenizer {
 			
 			if (this.regexPattern.whitespace.test(remaining)) {
 				const match = remaining.match(this.regexPattern.whitespace);
-				if (match) remaining = remaining.substring(match[0].length);
-				continue;
+				if (match && match.index === 0) {
+					remaining = remaining.substring(match[0].length);
+					continue;
+				}
 			}
 
 			if (this.regexPattern.comment.test(remaining)) {
 				const match = remaining.match(this.regexPattern.comment);
-				if (match) remaining = remaining.substring(match[0].length);
-				continue;
+				if (match && match.index === 0) {
+					remaining = remaining.substring(match[0].length);
+					continue;
+				}
 			}
 
 
 			if (this.regexPattern.terminal.test(remaining)) {
 				const match = remaining.match(this.regexPattern.terminal);
-				if (match) {
+				if (match && match.index === 0) {
 					this.tokens.push({
 						type: TokenType.Terminal,
 						value: match[0],
 						position: this.position,
 					});
 					remaining = remaining.substring(match[0].length);
+					continue;
 				}
-				continue;
 			}
 			
 			if (this.regexPattern.identifier.test(remaining)) {
 				const match = remaining.match(this.regexPattern.identifier);
-				if (match) {
+				if (match && match.index === 0) {
 					this.tokens.push({
 						type: TokenType.Identifier,
 						value: match[0],
 						position: this.position,
 					});
 					remaining = remaining.substring(match[0].length);
+					continue;
 				}
-				continue;
 			}
 
 			if (this.regexPattern.operator.test(remaining)) {
 				const match = remaining.match(this.regexPattern.operator);
-				if (match) {
+				if (match && match.index === 0) {
 					this.tokens.push({
 						type: TokenType.Operator,
 						value: match[0],
 						position: this.position,
 					});
 					remaining = remaining.substring(match[0].length);
+					continue;
 				}
-				continue;
 			}
 
 			throw new Error(`Unexpected token: ${remaining}`);
