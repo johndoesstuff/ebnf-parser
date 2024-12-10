@@ -1,0 +1,19 @@
+{
+  "name": "ebnf-parser",
+  "version": "1.0.0",
+  "description": "parser for ebnf syntax",
+  "main": "dist/main.js",
+  "scripts": {
+    "test": "node dist/main.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/johndoesstuff/ebnf-parser.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/johndoesstuff/ebnf-parser/issues"
+  },
+  "homepage": "https://github.com/johndoesstuff/ebnf-parser#readme"
+}
