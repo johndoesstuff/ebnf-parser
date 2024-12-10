@@ -17,10 +17,10 @@ class Tokenizer {
 	private tokens: Token[] = [];
 	private regexPattern: { [key: string]: RegExp } = {
 		comment: /\(\*[^*]*\*+(?:[^)*][^*]*\*+)*\)/,
-		whitespace: /^[ \t\n\r]+/,
-		terminal: /".[^"]*"|'.[^"]*'/,
+		whitespace: /[ \t\n\r\f\b]+/,
+		terminal: /".[^"]*"|'.[^']*'/,
 		identifier: /[A-Za-z][0-9A-Za-z_]*/,
-		operator: /\(:|:\)|\(|\/\)|[=,;\.\|\/!\[\]{}?\(\)]/,
+		operator: /\(:|:\)|\(|\/\)|[=,;\.\|\/!\[\]{}?\(\)\-+*<>]/,
 	};
 	private regexPriority: string[] = [
 		"whitespace",
