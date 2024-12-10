@@ -1,3 +1,5 @@
+import * as fs from 'fs';
+
 enum TokenType {
 	Identifier,
 	Terminal,
@@ -16,3 +18,7 @@ class Tokenizer {
 
 	constructor(private input: string) {}
 }
+
+const filePath = process.argv[2];
+const data = fs.readFileSync(filePath, 'utf-8');
+console.log(data);

@@ -16,5 +16,8 @@
   "bugs": {
     "url": "https://github.com/johndoesstuff/ebnf-parser/issues"
   },
-  "homepage": "https://github.com/johndoesstuff/ebnf-parser#readme"
+  "homepage": "https://github.com/johndoesstuff/ebnf-parser#readme",
+  "devDependencies": {
+    "@types/node": "^22.10.1"
+  }
 }
