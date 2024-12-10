@@ -4,7 +4,8 @@
   "description": "parser for ebnf syntax",
   "main": "dist/main.js",
   "scripts": {
-    "test": "node dist/main.js"
+    "build": "tsc",
+    "start": "node dist/main.js"
   },
   "repository": {
     "type": "git",
