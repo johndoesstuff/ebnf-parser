@@ -12,6 +12,18 @@ interface Token {
 	position: number,
 }
 
+enum NodeType {
+	Program,
+
+}
+
+interface Node {
+	type: NodeType,
+	value?: string,
+	position: number,
+	children: { [key: string]: Node },
+}
+
 class Tokenizer {
 	private position = 0;
 	private tokens: Token[] = [];
@@ -102,10 +114,28 @@ class Tokenizer {
 	}
 }
 
+class Parser {
+	constructor(private input: Token[]) {}
+	
+	private position = 0;
+	private ast: Node = {
+		type: NodeType.Program,
+		position: 0,
+		children: {},
+	}
+
+	parse(): Node {
+		return this.ast;
+	}
+}
+
 const filePath = process.argv[2];
 const data = fs.readFileSync(filePath, 'utf-8');
 
 const tokenizer = new Tokenizer(data);
 const tokens = tokenizer.tokenize();
+const parser = new Parser(tokens);
+const ast = parser.parse();
 
 console.log(tokens);
+console.log(ast);
