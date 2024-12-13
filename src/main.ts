@@ -144,16 +144,17 @@ class Parser {
 
 	consume(tokenType: TokenType, value?: string): Token {
 		if (!value) {
-			if (peek().type == tokenType) {
+			if (this.peek().type == tokenType) {
 				return this.tokens[this.position++];
 			}
-			parseError(tokenType, peek());
+			this.parseError(tokenType, this.peek());
 		} else {
-			if (peek().type == tokenType && peek().value == value) {
+			if (this.peek().type == tokenType && this.peek().value == value) {
 				return this.tokens[this.position++];
 			}
-			parseError(tokenType, peek(), value);
+			this.parseError(tokenType, this.peek(), value);
 		}
+		return this.tokens[this.position++];
 	}
 
 	peek(): Token {
@@ -165,15 +166,25 @@ class Parser {
 	}
 
 	consumeRule(): Node {
-		rhs: Node = consumeIdentifier();
-		consume(TokenType.Operator, '=');
-		lhs: Node = consumeAlternation();
-		consume(TokenType.Terminator);
+		let rhs: Node = this.consumeIdentifier();
+		this.consume(TokenType.Operator, '=');
+		let lhs: Node = this.consumeAlternation();
+		this.consume(TokenType.Terminator);
 		return {
 			type: NodeType.Rule,
 			position: 0,
-			children: {},
+			children: { rhs, lhs },
 		};
+	}
+
+	consumeIdentifier(): Node {
+		let identifier: Token = this.consume(TokenType.Identifier);
+		return {
+			type: NodeType.Identifier,
+			position: identifier.position,
+			value: identifier.value,
+			children: {},
+		}
 	}
 }
 
