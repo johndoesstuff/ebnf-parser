@@ -242,6 +242,41 @@ class Parser {
 			}
 		}
 	}
+
+	consumeTerm(): Node {
+		let token: Token = this.peek();
+		let contents: Node = null as unknown as Node;
+		let value: string = ''; //important for determining grouping type
+		if (token.value == '(') {
+			this.consume(TokenType.Operator, '(');
+			contents = this.consumeAlternation();
+			this.consume(TokenType.Operator, ')');
+			value = '()';
+		} else if (token.value == '[') {
+			this.consume(TokenType.Operator, '[');
+			contents = this.consumeAlternation();
+			this.consume(TokenType.Operator, ']');
+			value = '[]';
+		} else if (token.value == '{') {
+			this.consume(TokenType.Operator, '{');
+			contents = this.consumeAlternation();
+			this.consume(TokenType.Operator, '}');
+			value = '{}';
+		} else if (token.type == TokenType.Terminal) { //not particularly sure why a terminal would be a term but im trusting wikipedia on this for now
+			let term: Token = this.consume(TokenType.Terminal);
+			//contents = {}; i am unsure of what to even put here as this case shouldnt fundementally happen? i think? i'll get there when i get there
+			value = ';';
+		} else {
+			contents = this.consumeIdentifier();
+			value = 'identifier'; //yes yes these should probably be enums somewhere but this is my first ever typescript program and second parser give me some grace buster
+		}
+		return {
+			type: NodeType.Term,
+			position: contents.position,
+			value,
+			children: {contents},
+		}
+	}
 }
 
 const filePath = process.argv[2];
