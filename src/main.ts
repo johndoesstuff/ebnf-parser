@@ -192,12 +192,54 @@ class Parser {
 		concats.push(this.consumeConcatenation());
 		while (this.peek().value == '|') {
 			this.consume(TokenType.Operator, '|');
-			concats.push(this.consumeConcatentation());
+			concats.push(this.consumeConcatenation());
 		}
 		return {
 			type: NodeType.Alternation,
 			position: concats[0].position,
 			children: concats,
+		}
+	}
+
+	consumeConcatenation(): Node {
+		let factors: Node[] = [];
+		factors.push(this.consumeFactor());
+		while (this.peek().value == ',') {
+			this.consume(TokenType.Operator, ',');
+			factors.push(this.consumeFactor());
+		}
+		return {
+			type: NodeType.Concatenation,
+			position: factors[0].position,
+			children: factors,
+		}
+	}
+
+	consumeFactor(): Node {
+		let lhs: Node = this.consumeTerm();
+		if (['?', '*', '+'].includes(this.peek().value)) { //normal operator case
+			let operator: Token = this.consume(TokenType.Operator);
+			return {
+				type: NodeType.Factor,
+				position: lhs.position,
+				value: operator.value,
+				children: { term: lhs },
+			}
+		} else if (this.peek().value == '-') { //exclusion case
+			this.consume(TokenType.Operator, '-');
+			let rhs: Node = this.consumeTerm();
+			return {
+				type: NodeType.Factor,
+				position: lhs.position,
+				value: '-',
+				children: { lhs, rhs },
+			}
+		} else { //just term case
+			return {
+				type: NodeType.Factor,
+				position: lhs.position,
+				children: { term: lhs },
+			}
 		}
 	}
 }
