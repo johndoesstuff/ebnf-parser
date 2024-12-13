@@ -135,7 +135,7 @@ class Parser {
 	private ast: Node = {
 		type: NodeType.Grammar,
 		position: 0,
-		children: {},
+		children: [],
 	}
 
 	parseError(expected: TokenType, found: Token, expectedValue?: string) {
@@ -162,6 +162,10 @@ class Parser {
 	}
 
 	parse(): Node {
+		this.ast.children = [] as Node[];
+		while (this.peek()) {
+			this.ast.children.push(this.consumeRule());
+		}
 		return this.ast;
 	}
 
@@ -262,9 +266,13 @@ class Parser {
 			contents = this.consumeAlternation();
 			this.consume(TokenType.Operator, '}');
 			value = '{}';
-		} else if (token.type == TokenType.Terminal) { //not particularly sure why a terminal would be a term but im trusting wikipedia on this for now
+		} else if (token.type == TokenType.Terminal) { //eating my words but this is stupid and inconvenient and i dont like it
 			let term: Token = this.consume(TokenType.Terminal);
-			//contents = {}; i am unsure of what to even put here as this case shouldnt fundementally happen? i think? i'll get there when i get there
+			contents = {
+				type: NodeType.Term,
+				position: term.position,
+				children: {},
+			};
 			value = ';';
 		} else {
 			contents = this.consumeIdentifier();
