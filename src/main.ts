@@ -27,7 +27,7 @@ interface Node {
 	type: NodeType,
 	value?: string,
 	position: number,
-	children: { [key: string]: Node },
+	children: { [key: string]: Node } | Node[],
 }
 
 class Tokenizer {
@@ -154,7 +154,7 @@ class Parser {
 			}
 			this.parseError(tokenType, this.peek(), value);
 		}
-		return this.tokens[this.position++];
+				return this.tokens[this.position++];
 	}
 
 	peek(): Token {
@@ -172,7 +172,7 @@ class Parser {
 		this.consume(TokenType.Terminator);
 		return {
 			type: NodeType.Rule,
-			position: 0,
+			position: rhs.position,
 			children: { rhs, lhs },
 		};
 	}
@@ -184,6 +184,20 @@ class Parser {
 			position: identifier.position,
 			value: identifier.value,
 			children: {},
+		}
+	}
+
+	consumeAlternation(): Node {
+		let concats: Node[] = [];
+		concats.push(this.consumeConcatenation());
+		while (this.peek().value == '|') {
+			this.consume(TokenType.Operator, '|');
+			concats.push(this.consumeConcatentation());
+		}
+		return {
+			type: NodeType.Alternation,
+			position: concats[0].position,
+			children: concats,
 		}
 	}
 }
