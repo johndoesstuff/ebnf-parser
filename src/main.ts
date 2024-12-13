@@ -4,6 +4,7 @@ enum TokenType {
 	Identifier,
 	Terminal,
 	Operator,
+	Terminator,
 }
 
 interface Token {
@@ -13,8 +14,13 @@ interface Token {
 }
 
 enum NodeType {
-	Program,
-
+	Grammar,
+	Rule,
+	Concatenation,
+	Alternation,
+	Factor,
+	Term,
+	Identifier,
 }
 
 interface Node {
@@ -26,21 +32,16 @@ interface Node {
 
 class Tokenizer {
 	private position = 0;
-	private tokens: Token[] = [];
+	private tokens: Token[] = [];	
+	
 	private regexPattern: { [key: string]: RegExp } = {
 		comment: /\(\*[^*]*\*+(?:[^)*][^*]*\*+)*\)/,
 		whitespace: /[ \t\n\r\f\b]+/,
 		terminal: /".[^"]*"|'.[^']*'/,
 		identifier: /[A-Za-z][0-9A-Za-z_]*/,
-		operator: /\(:|:\)|\(|\/\)|[=,;\.\|\/!\[\]{}?\(\)\-+*<>]/,
+		operator: /\(:|:\)|\(|\/\)|[=,\|\/!\[\]{}?\(\)\-+*<>]/,
+		terminator: /[;\.]/,
 	};
-	private regexPriority: string[] = [
-		"whitespace",
-		"comment",
-		"terminal",
-		"identifier",
-		"operator",
-	];
 
 	constructor(private input: string) {}
 
@@ -81,6 +82,19 @@ class Tokenizer {
 				}
 			}
 			
+			if (this.regexPattern.terminator.test(remaining)) {
+				const match = remaining.match(this.regexPattern.terminator);
+				if (match && match.index === 0) {
+					this.tokens.push({
+						type: TokenType.Terminator,
+						value: match[0],
+						position: this.position,
+					});
+					remaining = remaining.substring(match[0].length);
+					continue;
+				}
+			}
+
 			if (this.regexPattern.identifier.test(remaining)) {
 				const match = remaining.match(this.regexPattern.identifier);
 				if (match && match.index === 0) {
@@ -115,17 +129,32 @@ class Tokenizer {
 }
 
 class Parser {
-	constructor(private input: Token[]) {}
+	constructor(private tokens: Token[]) {}
 	
 	private position = 0;
 	private ast: Node = {
-		type: NodeType.Program,
+		type: NodeType.Grammar,
 		position: 0,
 		children: {},
 	}
 
+	consume(tokenType: TokenType): Token {
+		if (this.tokens[this.position].type == tokenType) {
+			return this.tokens[this.position++];
+		}
+		throw `could not find token of type ${tokenType}, instead found ${this.tokens[this.position]}`;
+	}
+
 	parse(): Node {
 		return this.ast;
+	}
+
+	consumeRule(): Node {
+		return {
+			type: NodeType.Rule,
+			position: 0,
+			children: {},
+		};
 	}
 }
 
