@@ -138,11 +138,26 @@ class Parser {
 		children: {},
 	}
 
-	consume(tokenType: TokenType): Token {
-		if (this.tokens[this.position].type == tokenType) {
-			return this.tokens[this.position++];
+	parseError(expected: TokenType, found: Token, expectedValue?: string) {
+		throw `Expected token of type ${expected}${expectedValue ? " and value of " + expectedValue : ''}, instead found ${found.value} of type ${found.type} at ${found.position}`;
+	}
+
+	consume(tokenType: TokenType, value?: string): Token {
+		if (!value) {
+			if (peek().type == tokenType) {
+				return this.tokens[this.position++];
+			}
+			parseError(tokenType, peek());
+		} else {
+			if (peek().type == tokenType && peek().value == value) {
+				return this.tokens[this.position++];
+			}
+			parseError(tokenType, peek(), value);
 		}
-		throw `could not find token of type ${tokenType}, instead found ${this.tokens[this.position]}`;
+	}
+
+	peek(): Token {
+		return this.tokens[this.position];
 	}
 
 	parse(): Node {
@@ -150,6 +165,10 @@ class Parser {
 	}
 
 	consumeRule(): Node {
+		rhs: Node = consumeIdentifier();
+		consume(TokenType.Operator, '=');
+		lhs: Node = consumeAlternation();
+		consume(TokenType.Terminator);
 		return {
 			type: NodeType.Rule,
 			position: 0,
