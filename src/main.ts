@@ -287,6 +287,12 @@ class Parser {
 	}
 }
 
+class Compiler {
+	private identifiers: string[] = [];
+
+	constructor(private ast: Node) {};
+}
+
 const filePath = process.argv[2];
 const data = fs.readFileSync(filePath, 'utf-8');
 
@@ -296,4 +302,4 @@ const parser = new Parser(tokens);
 const ast = parser.parse();
 
 console.log(tokens);
-console.log(ast);
+console.log(JSON.stringify(ast));
