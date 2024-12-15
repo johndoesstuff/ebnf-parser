@@ -313,7 +313,7 @@ class Compiler {
 			let key: string = Object.keys(this.rules)[i];
 			compiledEnums.push(`\t${key} = '${key}',`);
 		}
-		compiledEnums.push('}\n');
+		compiledEnums.push('}\n\n');
 		return compiledEnums.join("\n");
 	}
 
@@ -325,18 +325,25 @@ class Compiler {
 
 		compiledParser.push('\tpeek(): string {');
 		compiledParser.push('\t\treturn this.input[this.position]');
-		compiledParser.push('\t}');
+		compiledParser.push('\t}\n');
 		compiledParser.push('\tconsume() {');
 		compiledParser.push('\t\tlet temp: string = this.peek();');
 		compiledParser.push('\t\tposition++;');
 		compiledParser.push('\t\treturn temp;');
-		compiledParser.push('\t}');
-		compiledParser.push('\t');
-		compiledParser.push('\t');
-		compiledParser.push('\t');
-		compiledParser.push('\t');
+		compiledParser.push('\t}\n');
+		for (let i = 0; i < Object.keys(this.rules).length; i++) {
+			let key: string = Object.keys(this.rules)[i];
+			compiledParser.push(...this.createConsumer(key, this.rules[key]));
+		}
 		compiledParser.push('}');
 		return compiledParser.join("\n");
+	}
+
+	createConsumer(identifier: string, rule: Node): string[] {
+		let compiledConsumer: string[] = [];
+		compiledConsumer.push(`\tconsume${identifier}() {`);
+		compiledConsumer.push('\t}')
+		return compiledConsumer;
 	}
 
 	compile(): string {
