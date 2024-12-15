@@ -170,9 +170,9 @@ class Parser {
 	}
 
 	consumeRule(): Node {
-		let rhs: Node = this.consumeIdentifier();
+		let lhs: Node = this.consumeIdentifier();
 		this.consume(TokenType.Operator, '=');
-		let lhs: Node = this.consumeAlternation();
+		let rhs: Node = this.consumeAlternation();
 		this.consume(TokenType.Terminator);
 		return {
 			type: NodeType.Rule,
@@ -288,9 +288,22 @@ class Parser {
 }
 
 class Compiler {
-	private identifiers: string[] = [];
+	private rules: { [key: string[]] : Node } = [];
 
 	constructor(private ast: Node) {};
+
+	getIdentifiers(): string[] {
+		if (ast.type != NodeTypes.Grammar) throw `huh`;
+		for (let i: int = 0; i < ast.children.length; i++) {
+			let rule: Node = ast.children[i];
+			if (rule.type != NodeTypes.Rule) throw `thats not good!`;
+			this.rules[rule.children["lhs"].value] = rule.children["rhs"];
+		}
+	}
+
+	compile(): string {
+		return JSON.stringify(this.rules, null, 2);
+	}
 }
 
 const filePath = process.argv[2];
@@ -300,6 +313,9 @@ const tokenizer = new Tokenizer(data);
 const tokens = tokenizer.tokenize();
 const parser = new Parser(tokens);
 const ast = parser.parse();
+const compiler = new Compiler(ast);
+const compiled = compiler.compile();
 
 console.log(tokens);
 console.log(JSON.stringify(ast));
+console.log(compiled);
