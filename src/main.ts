@@ -317,9 +317,32 @@ class Compiler {
 		return compiledEnums.join("\n");
 	}
 
+	createParser(): string {
+		let compiledParser: string[] = [];
+		compiledParser.push('class Parser {');
+		compiledParser.push('\tlet position = 0;\n');
+		compiledParser.push('\tconstructor(private input: string) {}\n');
+
+		compiledParser.push('\tpeek(): string {');
+		compiledParser.push('\t\treturn this.input[this.position]');
+		compiledParser.push('\t}');
+		compiledParser.push('\tconsume() {');
+		compiledParser.push('\t\tlet temp: string = this.peek();');
+		compiledParser.push('\t\tposition++;');
+		compiledParser.push('\t\treturn temp;');
+		compiledParser.push('\t}');
+		compiledParser.push('\t');
+		compiledParser.push('\t');
+		compiledParser.push('\t');
+		compiledParser.push('\t');
+		compiledParser.push('}');
+		return compiledParser.join("\n");
+	}
+
 	compile(): string {
 		let compileString: string = '';
 		compileString += this.createEnums();
+		compileString += this.createParser();
 		return compileString;
 	}
 }
