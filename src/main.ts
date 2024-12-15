@@ -21,6 +21,7 @@ enum NodeType {
 	Factor = 'factor',
 	Term = 'term',
 	Identifier = 'identifier',
+	Terminal = 'terminal',
 }
 
 interface Node {
@@ -266,14 +267,14 @@ class Parser {
 			contents = this.consumeAlternation();
 			this.consume(TokenType.Operator, '}');
 			value = '{}';
-		} else if (token.type == TokenType.Terminal) { //eating my words but this is stupid and inconvenient and i dont like it
+		} else if (token.type == TokenType.Terminal) { //was i drunk?? what the fuck was this???
 			let term: Token = this.consume(TokenType.Terminal);
-			contents = {
-				type: NodeType.Term,
+			return {
+				type: NodeType.Terminal,
 				position: term.position,
+				value: term.value,
 				children: [],
-			};
-			value = ';';
+			}
 		} else {
 			contents = this.consumeIdentifier();
 			value = 'identifier'; //yes yes these should probably be enums somewhere but this is my first ever typescript program and second parser give me some grace buster
@@ -342,8 +343,24 @@ class Compiler {
 	createConsumer(identifier: string, rule: Node): string[] {
 		let compiledConsumer: string[] = [];
 		compiledConsumer.push(`\tconsume${identifier}() {`);
-		compiledConsumer.push('\t}')
+		compiledConsumer.push(`\t\t${this.createAlternator(rule)}`);
+		compiledConsumer.push('\t}\n')
 		return compiledConsumer;
+	}
+
+	createAlternator(alternator: Node): string {
+		let compiledAlternator: string = "";
+		if (alternator.type != NodeType.Alternation) throw `huhhh`;
+		for (let i = 0; i < alternator.children.length; i++) {
+			compiledAlternator += this.createConcatenator(alternator.children[i]);
+		}
+		return compiledAlternator;
+	}
+
+	createConcatenator(concatenator: Node): string {
+		let compiledConcatenator: string = "";
+		if (concatenator.type != NodeType.Concatenation) throw `expected concatenator...`;
+		return "w";
 	}
 
 	compile(): string {
