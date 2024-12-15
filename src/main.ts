@@ -27,7 +27,7 @@ interface Node {
 	type: NodeType,
 	value?: string,
 	position: number,
-	children: { [key: string]: Node } | Node[],
+	children: Node[],
 }
 
 class Tokenizer {
@@ -177,7 +177,7 @@ class Parser {
 		return {
 			type: NodeType.Rule,
 			position: rhs.position,
-			children: { rhs, lhs },
+			children: [ lhs, rhs ],
 		};
 	}
 
@@ -187,7 +187,7 @@ class Parser {
 			type: NodeType.Identifier,
 			position: identifier.position,
 			value: identifier.value,
-			children: {},
+			children: [],
 		}
 	}
 
@@ -227,7 +227,7 @@ class Parser {
 				type: NodeType.Factor,
 				position: lhs.position,
 				value: operator.value,
-				children: { term: lhs },
+				children: [ lhs ],
 			}
 		} else if (this.peek().value == '-') { //exclusion case
 			this.consume(TokenType.Operator, '-');
@@ -236,13 +236,13 @@ class Parser {
 				type: NodeType.Factor,
 				position: lhs.position,
 				value: '-',
-				children: { lhs, rhs },
+				children: [ lhs, rhs ],
 			}
 		} else { //just term case
 			return {
 				type: NodeType.Factor,
 				position: lhs.position,
-				children: { term: lhs },
+				children: [ lhs ],
 			}
 		}
 	}
@@ -271,7 +271,7 @@ class Parser {
 			contents = {
 				type: NodeType.Term,
 				position: term.position,
-				children: {},
+				children: [],
 			};
 			value = ';';
 		} else {
@@ -282,26 +282,31 @@ class Parser {
 			type: NodeType.Term,
 			position: contents.position,
 			value,
-			children: {contents},
+			children: [ contents ],
 		}
 	}
 }
 
 class Compiler {
-	private rules: { [key: string[]] : Node } = [];
+	private rules: { [key: string] : Node } = {};
 
 	constructor(private ast: Node) {};
 
-	getIdentifiers(): string[] {
-		if (ast.type != NodeTypes.Grammar) throw `huh`;
-		for (let i: int = 0; i < ast.children.length; i++) {
+	getIdentifiers() {
+		if (ast.type != NodeType.Grammar) throw `huh`;
+		for (let i = 0; i < ast.children.length; i++) {
 			let rule: Node = ast.children[i];
-			if (rule.type != NodeTypes.Rule) throw `thats not good!`;
-			this.rules[rule.children["lhs"].value] = rule.children["rhs"];
+			if (!rule.children || rule.children.length < 2) throw `blehhh!!`
+			if (rule.type != NodeType.Rule) throw `thats not good!`;
+			const lhs = rule.children[0];
+			const rhs = rule.children[1];
+			if (!lhs.value) throw `rule must have a value`
+			this.rules[lhs.value as string] = rhs;
 		}
 	}
 
 	compile(): string {
+		this.getIdentifiers();
 		return JSON.stringify(this.rules, null, 2);
 	}
 }
