@@ -1,10 +1,10 @@
 import * as fs from 'fs';
 
 enum TokenType {
-	Identifier,
-	Terminal,
-	Operator,
-	Terminator,
+	Identifier = 'identifier',
+	Terminal = 'terminal',
+	Operator = 'operator',
+	Terminator = 'terminator',
 }
 
 interface Token {
@@ -14,13 +14,13 @@ interface Token {
 }
 
 enum NodeType {
-	Grammar,
-	Rule,
-	Concatenation,
-	Alternation,
-	Factor,
-	Term,
-	Identifier,
+	Grammar = 'grammar',
+	Rule = 'rule',
+	Concatenation = 'concatenation',
+	Alternation = 'alternation',
+	Factor = 'factor',
+	Term = 'term',
+	Identifier = 'identifier',
 }
 
 interface Node {
@@ -304,10 +304,23 @@ class Compiler {
 			this.rules[lhs.value as string] = rhs;
 		}
 	}
+	
+	createEnums(): string {	
+		this.getIdentifiers();
+		let compiledEnums: string[] = [];
+		compiledEnums.push('enum Type {');
+		for (let i = 0; i < Object.keys(this.rules).length; i++) {
+			let key: string = Object.keys(this.rules)[i];
+			compiledEnums.push(`\t${key} = '${key}',`);
+		}
+		compiledEnums.push('}\n');
+		return compiledEnums.join("\n");
+	}
 
 	compile(): string {
-		this.getIdentifiers();
-		return JSON.stringify(this.rules, null, 2);
+		let compileString: string = '';
+		compileString += this.createEnums();
+		return compileString;
 	}
 }
 
