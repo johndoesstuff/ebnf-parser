@@ -294,7 +294,7 @@ class Compiler {
 	constructor(private ast: Node) {};
 
 	getIdentifiers() {
-		if (ast.type != NodeType.Grammar) throw `huh`;
+		if (this.ast.type != NodeType.Grammar) throw `huh`;
 		for (let i = 0; i < ast.children.length; i++) {
 			let rule: Node = ast.children[i];
 			if (!rule.children || rule.children.length < 2) throw `blehhh!!`
@@ -321,15 +321,15 @@ class Compiler {
 	createParser(): string {
 		let compiledParser: string[] = [];
 		compiledParser.push('class Parser {');
-		compiledParser.push('\tlet position = 0;\n');
+		compiledParser.push('\tprivate position: number = 0;\n');
 		compiledParser.push('\tconstructor(private input: string) {}\n');
 
 		compiledParser.push('\tpeek(): string {');
 		compiledParser.push('\t\treturn this.input[this.position]');
 		compiledParser.push('\t}\n');
 		compiledParser.push('\tconsume() {');
-		compiledParser.push('\t\tlet temp: string = this.peek();');
-		compiledParser.push('\t\tposition++;');
+		compiledParser.push('\t\tconst temp: string = this.peek();');
+		compiledParser.push('\t\tthis.position++;');
 		compiledParser.push('\t\treturn temp;');
 		compiledParser.push('\t}\n');
 		for (let i = 0; i < Object.keys(this.rules).length; i++) {
@@ -353,6 +353,9 @@ class Compiler {
 		if (alternator.type != NodeType.Alternation) throw `huhhh`;
 		for (let i = 0; i < alternator.children.length; i++) {
 			compiledAlternator += this.createConcatenator(alternator.children[i]);
+			if (i + 1 < alternator.children.length) {
+				compiledAlternator += " || ";
+			}
 		}
 		return compiledAlternator;
 	}
@@ -360,7 +363,19 @@ class Compiler {
 	createConcatenator(concatenator: Node): string {
 		let compiledConcatenator: string = "";
 		if (concatenator.type != NodeType.Concatenation) throw `expected concatenator...`;
-		return "w";
+		for (let i = 0; i < concatenator.children.length; i++) {
+			compiledConcatenator += this.createFactor(concatenator.children[i]);
+			if (i + 1 < concatenator.children.length) {
+				compiledConcatenator += " + ";
+			}
+		}
+		return compiledConcatenator;
+	}
+
+	createFactor(factor: Node): string {
+		let compiledFactor: string = "0";
+		if (factor.type != NodeType.Factor) throw `expected factor...`;
+		return compiledFactor;
 	}
 
 	compile(): string {
