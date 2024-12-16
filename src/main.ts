@@ -351,14 +351,25 @@ class Compiler {
 		let compiledConsumer: string[] = [];
 		compiledConsumer.push(`\tconsume${identifier}() {`);
 		compiledConsumer.push('\t\tlet startPosition = this.position;'); //incase consumption fails
-		compiledConsumer.push(`\t\t${this.createAlternator(rule)}`);
+		compiledConsumer.push(`\t\tlet success: boolean = ${this.createAlternator(rule)};`);
+		compiledConsumer.push(`\t\tif (!success) this.position = startPosition;`); //if consumption fails
+		compiledConsumer.push(`\t\treturn success;`); //if consumption fails
 		compiledConsumer.push('\t}\n')
 		return compiledConsumer;
+	}
+
+	doNoneOrMore(code: string): string {
+		return "(()=>{let startPosition = 0; while(" + code + "){}; return true})()";
+	}
+
+	doNoneOrOnce(code: string): string {
+		return "(" + code + " || true)";
 	}
 
 	createAlternator(alternator: Node): string {
 		let compiledAlternator: string = "";
 		if (alternator.type != NodeType.Alternation) throw `huhhh`;
+		if (alternator.children.length == 1) return this.createConcatenator(alternator.children[0]);
 		for (let i = 0; i < alternator.children.length; i++) {
 			compiledAlternator += "(" + this.createConcatenator(alternator.children[i]) + ")";
 			if (i + 1 < alternator.children.length) {
@@ -371,8 +382,9 @@ class Compiler {
 	createConcatenator(concatenator: Node): string {
 		let compiledConcatenator: string = "";
 		if (concatenator.type != NodeType.Concatenation) throw `expected concatenator...`;
+		if (concatenator.children.length == 1) return this.createFactor(concatenator.children[0]);
 		for (let i = 0; i < concatenator.children.length; i++) {
-			compiledConcatenator += "(" + this.createFactor(concatenator.children[i]) + ")";
+			compiledConcatenator += this.createFactor(concatenator.children[i]);
 			if (i + 1 < concatenator.children.length) {
 				compiledConcatenator += " && ";
 			}
@@ -385,8 +397,8 @@ class Compiler {
 		if (factor.type != NodeType.Factor) throw `expected factor...`;
 		if (!factor.value) { //no operaton to be performed
 			compiledFactor += this.createTerm(factor.children[0]);
-		} else {
-			compiledFactor += "while (" + this.createTerm(factor.children[0]) + ")";
+		} else if (factor.value == "*") {
+			compiledFactor += this.doNoneOrMore(this.createTerm(factor.children[0]));
 		}
 		return compiledFactor;
 	}
@@ -397,6 +409,12 @@ class Compiler {
 			compiledTerm += this.createIdentifier(term.children[0]);
 		} else if (term.value == "terminal") {
 			compiledTerm += this.createTerminal(term.children[0]);
+		} else if (term.value == "[]") {
+			compiledTerm += this.doNoneOrOnce(this.createAlternator(term.children[0]));
+		} else if (term.value == "()") {
+			compiledTerm += "(" + this.createAlternator(term.children[0]) + ")";
+		} else if (term.value == "{}") {
+			compiledTerm += this.doNoneOrMore(this.createAlternator(term.children[0]));
 		}
 		return compiledTerm;
 	}
