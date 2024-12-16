@@ -359,7 +359,11 @@ class Compiler {
 	}
 
 	doNoneOrMore(code: string): string {
-		return "(()=>{let startPosition = 0; while(" + code + "){}; return true})()";
+		return "(()=>{let startPosition = this.position; while(" + code + "){}; return true})()";
+	}
+
+	doOnceOrMore(code: string): string {
+		return "(()=>{let startPosition = this.position; if (!" + code + ") {this.position = startPosition; return false;} while (" + code + ") {} return true;})()";
 	}
 
 	doNoneOrOnce(code: string): string {
@@ -399,6 +403,10 @@ class Compiler {
 			compiledFactor += this.createTerm(factor.children[0]);
 		} else if (factor.value == "*") {
 			compiledFactor += this.doNoneOrMore(this.createTerm(factor.children[0]));
+		} else if (factor.value == "+") {
+			compiledFactor += this.doOnceOrMore(this.createTerm(factor.children[0]));
+		} else if (factor.value == "?") {
+			compiledFactor += this.doNoneOrOnce(this.createTerm(factor.children[0]));
 		}
 		return compiledFactor;
 	}
