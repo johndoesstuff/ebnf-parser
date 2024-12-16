@@ -267,13 +267,18 @@ class Parser {
 			contents = this.consumeAlternation();
 			this.consume(TokenType.Operator, '}');
 			value = '{}';
-		} else if (token.type == TokenType.Terminal) { //was i drunk?? what the fuck was this???
+		} else if (token.type == TokenType.Terminal) { //having things named term terminal and terminator gets confusing
 			let term: Token = this.consume(TokenType.Terminal);
 			return {
-				type: NodeType.Terminal,
+				type: NodeType.Term,
 				position: term.position,
-				value: term.value,
-				children: [],
+				value: 'terminal',
+				children: [{
+					type: NodeType.Terminal,
+					position: term.position,
+					value: term.value,
+					children: [],
+				}],
 			}
 		} else {
 			contents = this.consumeIdentifier();
@@ -345,6 +350,7 @@ class Compiler {
 	createConsumer(identifier: string, rule: Node): string[] {
 		let compiledConsumer: string[] = [];
 		compiledConsumer.push(`\tconsume${identifier}() {`);
+		compiledConsumer.push('\t\tlet startPosition = this.position;'); //incase consumption fails
 		compiledConsumer.push(`\t\t${this.createAlternator(rule)}`);
 		compiledConsumer.push('\t}\n')
 		return compiledConsumer;
@@ -354,7 +360,7 @@ class Compiler {
 		let compiledAlternator: string = "";
 		if (alternator.type != NodeType.Alternation) throw `huhhh`;
 		for (let i = 0; i < alternator.children.length; i++) {
-			compiledAlternator += this.createConcatenator(alternator.children[i]);
+			compiledAlternator += "(" + this.createConcatenator(alternator.children[i]) + ")";
 			if (i + 1 < alternator.children.length) {
 				compiledAlternator += " || ";
 			}
@@ -366,18 +372,41 @@ class Compiler {
 		let compiledConcatenator: string = "";
 		if (concatenator.type != NodeType.Concatenation) throw `expected concatenator...`;
 		for (let i = 0; i < concatenator.children.length; i++) {
-			compiledConcatenator += this.createFactor(concatenator.children[i]);
+			compiledConcatenator += "(" + this.createFactor(concatenator.children[i]) + ")";
 			if (i + 1 < concatenator.children.length) {
-				compiledConcatenator += " + ";
+				compiledConcatenator += " && ";
 			}
 		}
 		return compiledConcatenator;
 	}
 
 	createFactor(factor: Node): string {
-		let compiledFactor: string = "0";
+		let compiledFactor: string = "";
 		if (factor.type != NodeType.Factor) throw `expected factor...`;
+		if (!factor.value) { //no operaton to be performed
+			compiledFactor += this.createTerm(factor.children[0]);
+		} else {
+			compiledFactor += "while (" + this.createTerm(factor.children[0]) + ")";
+		}
 		return compiledFactor;
+	}
+
+	createTerm(term: Node): string {
+		let compiledTerm: string = "";
+		if (term.value == "identifier") {
+			compiledTerm += this.createIdentifier(term.children[0]);
+		} else if (term.value == "terminal") {
+			compiledTerm += this.createTerminal(term.children[0]);
+		}
+		return compiledTerm;
+	}
+
+	createIdentifier(identifier: Node): string {
+		return `this.consume${identifier.value}()`;
+	}
+
+	createTerminal(terminal: Node): string {
+		return `this.consume(${terminal.value})`;
 	}
 
 	compile(): string {
