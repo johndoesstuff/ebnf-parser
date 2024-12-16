@@ -327,10 +327,12 @@ class Compiler {
 		compiledParser.push('\tpeek(): string {');
 		compiledParser.push('\t\treturn this.input[this.position]');
 		compiledParser.push('\t}\n');
-		compiledParser.push('\tconsume() {');
-		compiledParser.push('\t\tconst temp: string = this.peek();');
-		compiledParser.push('\t\tthis.position++;');
-		compiledParser.push('\t\treturn temp;');
+		compiledParser.push('\tconsume(expected: string): boolean {');
+		compiledParser.push('\t\tif (this.peek() === expected) {');
+		compiledParser.push('\t\t\tthis.position++;');
+		compiledParser.push('\t\t\treturn true;');
+		compiledParser.push('\t\t}');
+		compiledParser.push('\t\treturn false;');
 		compiledParser.push('\t}\n');
 		for (let i = 0; i < Object.keys(this.rules).length; i++) {
 			let key: string = Object.keys(this.rules)[i];
