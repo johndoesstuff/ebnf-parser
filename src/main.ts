@@ -325,6 +325,7 @@ class Compiler {
 
 	createParser(): string {
 		let compiledParser: string[] = [];
+		compiledParser.push("import * as fs from 'fs'\n");
 		compiledParser.push('class Parser {');
 		compiledParser.push('\tprivate position: number = 0;\n');
 		compiledParser.push('\tconstructor(private input: string) {}\n');
@@ -343,7 +344,12 @@ class Compiler {
 			let key: string = Object.keys(this.rules)[i];
 			compiledParser.push(...this.createConsumer(key, this.rules[key]));
 		}
-		compiledParser.push('}');
+		let grammar: string = Object.keys(this.rules)[Object.keys(this.rules).length - 1] as string; //assume last rule defines a grammar
+		compiledParser.push('}\n');
+		compiledParser.push('const filePath = process.argv[2];');
+		compiledParser.push('const data = fs.readFileSync(filePath, "utf-8");');
+		compiledParser.push('const parser = Parser(data);')
+		compiledParser.push(`fs.writeFileSync(filePath, parser.consume${grammar}(), "utf8");`);
 		return compiledParser.join("\n");
 	}
 
@@ -368,6 +374,10 @@ class Compiler {
 
 	doNoneOrOnce(code: string): string {
 		return "(" + code + " || true)";
+	}
+
+	excludeFrom(code: string, excludes: string): string {
+		return "(" + code + "&& !" + excludes + ")"
 	}
 
 	createAlternator(alternator: Node): string {
@@ -407,6 +417,10 @@ class Compiler {
 			compiledFactor += this.doOnceOrMore(this.createTerm(factor.children[0]));
 		} else if (factor.value == "?") {
 			compiledFactor += this.doNoneOrOnce(this.createTerm(factor.children[0]));
+		} else if (factor.value == "-") {
+			compiledFactor += this.excludeFrom(this.createTerm(factor.children[0]), this.createTerm(factor.children[1]));
+		} else {
+			throw `unknown factor ${factor.value}`;
 		}
 		return compiledFactor;
 	}
@@ -423,6 +437,8 @@ class Compiler {
 			compiledTerm += "(" + this.createAlternator(term.children[0]) + ")";
 		} else if (term.value == "{}") {
 			compiledTerm += this.doNoneOrMore(this.createAlternator(term.children[0]));
+		} else {
+			throw `unknown term ${term.value}`;
 		}
 		return compiledTerm;
 	}
@@ -441,6 +457,10 @@ class Compiler {
 		compileString += this.createParser();
 		return compileString;
 	}
+
+	compileToFile(filePath: string) {
+		fs.writeFileSync(filePath, this.compile(), 'utf8');
+	}
 }
 
 const filePath = process.argv[2];
@@ -452,6 +472,7 @@ const parser = new Parser(tokens);
 const ast = parser.parse();
 const compiler = new Compiler(ast);
 const compiled = compiler.compile();
+compiler.compileToFile("compiled.ts");
 
 console.log(tokens);
 console.log(JSON.stringify(ast));
