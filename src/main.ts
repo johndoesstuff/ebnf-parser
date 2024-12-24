@@ -326,6 +326,10 @@ class Compiler {
 	createParser(): string {
 		let compiledParser: string[] = [];
 		compiledParser.push("import * as fs from 'fs'\n");
+		compiledParser.push("type ASTNode = {");
+		compiledParser.push("\ttype: string;");
+		compiledParser.push("\tvalue: string;");
+		compiledParser.push("};\n");
 		compiledParser.push('class Parser {');
 		compiledParser.push('\tprivate position: number = 0;\n');
 		compiledParser.push('\tconstructor(private input: string) {}\n');
@@ -333,10 +337,9 @@ class Compiler {
 		compiledParser.push('\tpeek(): string {');
 		compiledParser.push('\t\treturn this.input[this.position]');
 		compiledParser.push('\t}\n');
-		compiledParser.push('\tconsume(expected: string): boolean {');
+		compiledParser.push('\tconsume(expected: string): ASTNode | null {');
 		compiledParser.push('\t\tif (this.peek() === expected) {');
-		compiledParser.push('\t\t\tthis.position++;');
-		compiledParser.push('\t\t\treturn true;');
+		compiledParser.push('\t\t\treturn { type: "TOKEN", value: this.input[this.position++] };');
 		compiledParser.push('\t\t}');
 		compiledParser.push('\t\treturn false;');
 		compiledParser.push('\t}\n');
@@ -348,7 +351,7 @@ class Compiler {
 		compiledParser.push('}\n');
 		compiledParser.push('const filePath = process.argv[2];');
 		compiledParser.push('const data = fs.readFileSync(filePath, "utf-8");');
-		compiledParser.push('const parser = Parser(data);')
+		compiledParser.push('const parser = new Parser(data);')
 		compiledParser.push(`fs.writeFileSync(filePath, parser.consume${grammar}(), "utf8");`);
 		return compiledParser.join("\n");
 	}
@@ -357,7 +360,7 @@ class Compiler {
 		let compiledConsumer: string[] = [];
 		compiledConsumer.push(`\tconsume${identifier}() {`);
 		compiledConsumer.push('\t\tlet startPosition = this.position;'); //incase consumption fails
-		compiledConsumer.push(`\t\tlet success: boolean = ${this.createAlternator(rule)};`);
+		compiledConsumer.push(`\t\tlet success: ASTNode | null = ${this.createAlternator(rule)};`);
 		compiledConsumer.push(`\t\tif (!success) this.position = startPosition;`); //if consumption fails
 		compiledConsumer.push(`\t\treturn success;`); //if consumption fails
 		compiledConsumer.push('\t}\n')
@@ -472,7 +475,7 @@ const parser = new Parser(tokens);
 const ast = parser.parse();
 const compiler = new Compiler(ast);
 const compiled = compiler.compile();
-compiler.compileToFile("compiled.ts");
+compiler.compileToFile("dist/compiled.ts");
 
 console.log(tokens);
 console.log(JSON.stringify(ast));
