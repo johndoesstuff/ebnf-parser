@@ -385,29 +385,30 @@ class Compiler {
 	}
 
 	createAlternator(alternator: Node): string {
-		let compiledAlternator: string = "";
+		let compiledAlternator: string = "let startPosition = this.position; let res = null; ";
 		if (alternator.type != NodeType.Alternation) throw `huhhh`;
 		if (alternator.children.length == 1) return this.createConcatenator(alternator.children[0]);
 		for (let i = 0; i < alternator.children.length; i++) {
-			compiledAlternator += "(" + this.createConcatenator(alternator.children[i]) + ")";
-			if (i + 1 < alternator.children.length) {
+			compiledAlternator += "res = (" + this.createConcatenator(alternator.children[i]) + "); if (res) {return res;}";
+			/*if (i + 1 < alternator.children.length) {
 				compiledAlternator += " || ";
-			}
+			}*/
 		}
-		return compiledAlternator;
+		return "(()=>{" + compiledAlternator + "})()";
 	}
 
 	createConcatenator(concatenator: Node): string {
-		let compiledConcatenator: string = "";
+		let compiledConcatenator: string = "let startPosition = this.position; let acc = []; let res = null; ";
 		if (concatenator.type != NodeType.Concatenation) throw `expected concatenator...`;
 		if (concatenator.children.length == 1) return this.createFactor(concatenator.children[0]);
 		for (let i = 0; i < concatenator.children.length; i++) {
-			compiledConcatenator += this.createFactor(concatenator.children[i]);
-			if (i + 1 < concatenator.children.length) {
+			compiledConcatenator += "res = " + this.createFactor(concatenator.children[i]) + "; if (!res) {this.position = startPosition; return null} acc.push(res); "
+			/*if (i + 1 < concatenator.children.length) {
 				compiledConcatenator += " && ";
-			}
+			}*/
 		}
-		return compiledConcatenator;
+		compiledConcatenator += "return { type: 'concat', value: '', children: acc};"
+		return "(()=>{" + compiledConcatenator + "})()";
 	}
 
 	createFactor(factor: Node): string {
