@@ -342,7 +342,7 @@ class Compiler {
 		compiledParser.push('\t\tif (this.peek() === expected) {');
 		compiledParser.push('\t\t\treturn { type: "TOKEN", value: this.input[this.position++], children: [] };');
 		compiledParser.push('\t\t}');
-		compiledParser.push('\t\treturn false;');
+		compiledParser.push('\t\treturn null;');
 		compiledParser.push('\t}\n');
 		for (let i = 0; i < Object.keys(this.rules).length; i++) {
 			let key: string = Object.keys(this.rules)[i];
@@ -353,7 +353,7 @@ class Compiler {
 		compiledParser.push('const filePath = process.argv[2];');
 		compiledParser.push('const data = fs.readFileSync(filePath, "utf-8");');
 		compiledParser.push('const parser = new Parser(data);')
-		compiledParser.push(`fs.writeFileSync(filePath, parser.consume${grammar}(), "utf8");`);
+		compiledParser.push(`fs.writeFileSync(filePath, JSON.stringify(parser.consume${grammar}()), "utf8");`);
 		return compiledParser.join("\n");
 	}
 
