@@ -340,7 +340,7 @@ class Compiler {
 		compiledParser.push('\t}\n');
 		compiledParser.push('\tconsume(expected: string): ASTNode | null {');
 		compiledParser.push('\t\tif (this.peek() === expected) {');
-		compiledParser.push('\t\t\treturn { type: "TOKEN", value: this.input[this.position++] };');
+		compiledParser.push('\t\t\treturn { type: "TOKEN", value: this.input[this.position++], children: [] };');
 		compiledParser.push('\t\t}');
 		compiledParser.push('\t\treturn false;');
 		compiledParser.push('\t}\n');
@@ -369,19 +369,19 @@ class Compiler {
 	}
 
 	doNoneOrMore(code: string): string {
-		return "(()=>{let startPosition = this.position; let acc = []; let res = " + code + "; while(res){acc.push(res); res = " + code + "}; return acc})()";
+		return "(()=>{let startPosition = this.position; let acc = []; let res = " + code + "; while(res){acc.push(res); res = " + code + "}; return { type: 'matcher', value: '0+', children: acc};})()";
 	}
 
 	doOnceOrMore(code: string): string {
-		return "(()=>{let startPosition = this.position; let acc = []; let res = " + code + "; if (!res) {this.position = startPosition; return null;} while(res){acc.push(res); res = " + code + "}; return acc})()"; 
+		return "(()=>{let startPosition = this.position; let acc = []; let res = " + code + "; if (!res) {this.position = startPosition; return null;} while(res){acc.push(res); res = " + code + "}; return { type: 'matcher', value: '1+', children: acc};})()"; 
 	}
 
 	doNoneOrOnce(code: string): string {
-		return "(()=>{let startPosition = this.position; let res = " + code + "; if (!res) {this.position = startPosition; return [];} return [res]})()";
+		return "(()=>{let startPosition = this.position; let res = " + code + "; if (!res) {this.position = startPosition; return { type: 'matcher', value: '0|1', children: []};} return { type: 'matcher', value: '0|1', children: [res]};})()";
 	}
 
 	excludeFrom(code: string, excludes: string): string {
-		return "(" + code + "&& !" + excludes + ")"
+		return "(() => {let startPosition = this.position; let res = " + excludes + "; this.position = startPosition; if (res) {return null} else {return " + code + "}})()";
 	}
 
 	createAlternator(alternator: Node): string {
