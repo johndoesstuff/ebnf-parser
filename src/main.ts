@@ -329,6 +329,7 @@ class Compiler {
 		compiledParser.push("type ASTNode = {");
 		compiledParser.push("\ttype: string;");
 		compiledParser.push("\tvalue: string;");
+		compiledParser.push("\tchildren: ASTNode[];")
 		compiledParser.push("};\n");
 		compiledParser.push('class Parser {');
 		compiledParser.push('\tprivate position: number = 0;\n');
@@ -368,15 +369,15 @@ class Compiler {
 	}
 
 	doNoneOrMore(code: string): string {
-		return "(()=>{let startPosition = this.position; while(" + code + "){}; return true})()";
+		return "(()=>{let startPosition = this.position; let acc = []; let res = " + code + "; while(res){acc.push(res); res = " + code + "}; return acc})()";
 	}
 
 	doOnceOrMore(code: string): string {
-		return "(()=>{let startPosition = this.position; if (!" + code + ") {this.position = startPosition; return false;} while (" + code + ") {} return true;})()";
+		return "(()=>{let startPosition = this.position; let acc = []; let res = " + code + "; if (!res) {this.position = startPosition; return null;} while(res){acc.push(res); res = " + code + "}; return acc})()"; 
 	}
 
 	doNoneOrOnce(code: string): string {
-		return "(" + code + " || true)";
+		return "(()=>{let startPosition = this.position; let res = " + code + "; if (!res) {this.position = startPosition; return [];} return [res]})()";
 	}
 
 	excludeFrom(code: string, excludes: string): string {
