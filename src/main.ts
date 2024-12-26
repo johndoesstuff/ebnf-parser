@@ -353,7 +353,8 @@ class Compiler {
 		compiledParser.push('const filePath = process.argv[2];');
 		compiledParser.push('const data = fs.readFileSync(filePath, "utf-8");');
 		compiledParser.push('const parser = new Parser(data);')
-		compiledParser.push(`fs.writeFileSync(filePath, JSON.stringify(parser.consume${grammar}()), "utf8");`);
+		//compiledParser.push(`fs.writeFileSync(filePath, JSON.stringify(parser.consume${grammar}()), "utf8");`);
+		compiledParser.push(`console.log(JSON.stringify(parser.consume${grammar}()));`);
 		return compiledParser.join("\n");
 	}
 
