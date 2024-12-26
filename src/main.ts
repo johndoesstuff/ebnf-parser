@@ -375,10 +375,17 @@ class Compiler {
 	createConsumer(identifier: string, rule: Node): string[] {
 		let compiledConsumer: string[] = [];
 		compiledConsumer.push(`\tconsume${identifier}() {`);
+		compiledConsumer.push(`\t\tconsole.log("attempting to consume ${identifier} at position " + this.position + "")`);
 		compiledConsumer.push('\t\tlet startPosition = this.position;'); //incase consumption fails
 		compiledConsumer.push(`\t\tlet success: ASTNode | null = ${this.createAlternator(rule)};`);
-		compiledConsumer.push(`\t\tif (!success) this.position = startPosition;`); //if consumption fails
-		compiledConsumer.push(`\t\telse success.type = '${identifier}'`);
+		compiledConsumer.push(`\t\tif (!success) {`); //if consumption fails
+		compiledConsumer.push(`\t\t\tthis.position = startPosition;`); //if consumption fails
+		compiledConsumer.push(`\t\t\tconsole.log("could not consume ${identifier}")`);
+		compiledConsumer.push(`\t\t}`)
+		compiledConsumer.push(`\t\telse {`)
+		compiledConsumer.push(`\t\t\tsuccess.type = '${identifier}'`);
+		compiledConsumer.push(`\t\t\tconsole.log("consumed ${identifier}")`);
+		compiledConsumer.push(`\t\t}`);
 		compiledConsumer.push(`\t\treturn success;`);
 		compiledConsumer.push('\t}\n')
 		return compiledConsumer;
