@@ -352,7 +352,9 @@ class Compiler {
 		compiledParser.push('\t\treturn this.input[this.position]');
 		compiledParser.push('\t}\n');
 		compiledParser.push('\tconsume(expected: string): ASTNode | null {');
+		compiledParser.push('\t\tconsole.log(`attempting to consume ${expected}`)');
 		compiledParser.push('\t\tif (this.peek() === expected) {');
+		compiledParser.push('\t\t\tconsole.log(`consumed ${expected}`)');
 		compiledParser.push('\t\t\treturn { type: "TOKEN", value: this.input[this.position++], children: [] };');
 		compiledParser.push('\t\t}');
 		compiledParser.push('\t\treturn null;');
