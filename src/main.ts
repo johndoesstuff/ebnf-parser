@@ -269,6 +269,19 @@ class Parser {
 			value = '{}';
 		} else if (token.type == TokenType.Terminal) { //having things named term terminal and terminator gets confusing
 			let term: Token = this.consume(TokenType.Terminal);
+			/*let q = term.value[0];
+			term.value = q + term.value.slice(1, -1).replace(/\\(n|t|r|b|f|v|u[0-9a-fA-F]{4})/g, (match, p1) => {
+				switch(p1) {
+					case 'n': return '\n';
+					case 't': return '\t';
+					case 'r': return '\r';
+					case 'b': return '\b';
+					case 'f': return '\f';
+					case 'v': return '\v';
+					case 'u': return String.fromCharCode(parseInt(match.slice(2), 16));
+					default: return match;
+				}
+			}) + q;*/
 			return {
 				type: NodeType.Term,
 				position: term.position,
@@ -355,6 +368,7 @@ class Compiler {
 		compiledParser.push('const parser = new Parser(data);')
 		//compiledParser.push(`fs.writeFileSync(filePath, JSON.stringify(parser.consume${grammar}()), "utf8");`);
 		compiledParser.push(`console.log(JSON.stringify(parser.consume${grammar}()));`);
+		//compiledParser.push("console.log(`parsed until ${parser.position}`)");
 		return compiledParser.join("\n");
 	}
 
@@ -364,13 +378,14 @@ class Compiler {
 		compiledConsumer.push('\t\tlet startPosition = this.position;'); //incase consumption fails
 		compiledConsumer.push(`\t\tlet success: ASTNode | null = ${this.createAlternator(rule)};`);
 		compiledConsumer.push(`\t\tif (!success) this.position = startPosition;`); //if consumption fails
-		compiledConsumer.push(`\t\treturn success;`); //if consumption fails
+		compiledConsumer.push(`\t\telse success.type = '${identifier}'`);
+		compiledConsumer.push(`\t\treturn success;`);
 		compiledConsumer.push('\t}\n')
 		return compiledConsumer;
 	}
 
 	doNoneOrMore(code: string): string {
-		return "(()=>{let startPosition = this.position; let acc = []; let res = " + code + "; while(res){acc.push(res); res = " + code + "}; return { type: 'matcher', value: '0+', children: acc};})()";
+		return "(()=>{let startPosition = this.position; let acc = []; let res = null; do {res = " + code + "; if (res) acc.push(res)} while (res); return { type: 'matcher', value: '0+', children: acc};})()";
 	}
 
 	doOnceOrMore(code: string): string {
