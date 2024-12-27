@@ -31,6 +31,8 @@ interface Node {
 	children: Node[],
 }
 
+let verbose: boolean = false;
+
 class Tokenizer {
 	private position = 0;
 	private tokens: Token[] = [];	
@@ -338,55 +340,58 @@ class Compiler {
 
 	createParser(): string {
 		let compiledParser: string[] = [];
-		compiledParser.push("import * as fs from 'fs'\n");
-		compiledParser.push("type ASTNode = {");
+		compiledParser.push("import * as fs from 'fs'\n"); //imports
+
+		compiledParser.push("type ASTNode = {"); //ast node
 		compiledParser.push("\ttype: string;");
 		compiledParser.push("\tvalue: string;");
 		compiledParser.push("\tchildren: ASTNode[];")
 		compiledParser.push("};\n");
-		compiledParser.push('class Parser {');
+
+		compiledParser.push('class Parser {'); //parser class
 		compiledParser.push('\tprivate position: number = 0;\n');
 		compiledParser.push('\tconstructor(private input: string) {}\n');
 
-		compiledParser.push('\tpeek(): string {');
+		compiledParser.push('\tpeek(): string {'); //peek
 		compiledParser.push('\t\treturn this.input[this.position]');
 		compiledParser.push('\t}\n');
-		compiledParser.push('\tconsume(expected: string): ASTNode | null {');
-		compiledParser.push('\t\tconsole.log(`attempting to consume ${expected}`)');
+
+		compiledParser.push('\tconsume(expected: string): ASTNode | null {'); //consume
+		if (verbose) compiledParser.push('\t\tconsole.log(`attempting to consume ${expected}`)');
 		compiledParser.push('\t\tif (this.peek() === expected) {');
-		compiledParser.push('\t\t\tconsole.log(`consumed ${expected}`)');
+		if (verbose) compiledParser.push('\t\t\tconsole.log(`consumed ${expected}`)');
 		compiledParser.push('\t\t\treturn { type: "TOKEN", value: this.input[this.position++], children: [] };');
 		compiledParser.push('\t\t}');
 		compiledParser.push('\t\treturn null;');
 		compiledParser.push('\t}\n');
-		for (let i = 0; i < Object.keys(this.rules).length; i++) {
+
+		for (let i = 0; i < Object.keys(this.rules).length; i++) { //rules
 			let key: string = Object.keys(this.rules)[i];
 			compiledParser.push(...this.createConsumer(key, this.rules[key]));
 		}
 		let grammar: string = Object.keys(this.rules)[Object.keys(this.rules).length - 1] as string; //assume last rule defines a grammar
 		compiledParser.push('}\n');
-		compiledParser.push('const filePath = process.argv[2];');
+
+		compiledParser.push('const filePath = process.argv[2];'); //parse
 		compiledParser.push('const data = fs.readFileSync(filePath, "utf-8");');
 		compiledParser.push('const parser = new Parser(data);')
-		//compiledParser.push(`fs.writeFileSync(filePath, JSON.stringify(parser.consume${grammar}()), "utf8");`);
 		compiledParser.push(`console.log(JSON.stringify(parser.consume${grammar}()));`);
-		//compiledParser.push("console.log(`parsed until ${parser.position}`)");
 		return compiledParser.join("\n");
 	}
 
 	createConsumer(identifier: string, rule: Node): string[] {
 		let compiledConsumer: string[] = [];
 		compiledConsumer.push(`\tconsume${identifier}() {`);
-		compiledConsumer.push(`\t\tconsole.log("attempting to consume ${identifier} at position " + this.position + "")`);
+		if (verbose) compiledConsumer.push(`\t\tconsole.log("attempting to consume ${identifier} at position " + this.position + "")`);
 		compiledConsumer.push('\t\tlet startPosition = this.position;'); //incase consumption fails
 		compiledConsumer.push(`\t\tlet success: ASTNode | null = ${this.createAlternator(rule)};`);
 		compiledConsumer.push(`\t\tif (!success) {`); //if consumption fails
 		compiledConsumer.push(`\t\t\tthis.position = startPosition;`); //if consumption fails
-		compiledConsumer.push(`\t\t\tconsole.log("could not consume ${identifier}")`);
+		if (verbose) compiledConsumer.push(`\t\t\tconsole.log("could not consume ${identifier}")`);
 		compiledConsumer.push(`\t\t}`)
 		compiledConsumer.push(`\t\telse {`)
 		compiledConsumer.push(`\t\t\tsuccess.type = '${identifier}'`);
-		compiledConsumer.push(`\t\t\tconsole.log("consumed ${identifier}")`);
+		if (verbose) compiledConsumer.push(`\t\t\tconsole.log("consumed ${identifier}")`);
 		compiledConsumer.push(`\t\t}`);
 		compiledConsumer.push(`\t\treturn success;`);
 		compiledConsumer.push('\t}\n')
@@ -504,6 +509,8 @@ const compiler = new Compiler(ast);
 const compiled = compiler.compile();
 compiler.compileToFile("dist/compiled.ts");
 
-console.log(tokens);
-console.log(JSON.stringify(ast));
-console.log(compiled);
+if (verbose) {
+	console.log(tokens);
+	console.log(JSON.stringify(ast));
+	console.log(compiled);
+}
